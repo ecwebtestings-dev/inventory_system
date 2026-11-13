@@ -1,0 +1,447 @@
+
+{% extends "base.html" %}
+
+{% block title %}Inventory Dashboard{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block body %}
+<div class="app-layout">
+
+    {% include "components/_sidebar.html" %}
+    <div class="main-area">
+        <main class="dashboard-content">
+
+            {% include "components/_flash_messages.html" %}
+
+            <!-- Page heading -->
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">INVENTORY MANAGEMENT</p>
+                    <h1>Inventory overview</h1>
+                    <p>Manage your product records and keep track of available stock.</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="button button-primary"
+                    data-open-modal="addModal"
+                >
+                    <span>＋</span>
+                    Add product
+                </button>
+            </section>
+
+            <!-- Inventory statistics -->
+            <section class="stats-grid" id="stock-summary">
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Total products</span>
+                        <span class="stat-symbol"></span>
+                    </div>
+
+                    <strong>{{ summary.total }}</strong>
+                    
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Stock value</span>
+                        <span class="stat-symbol"></span>
+                    </div>
+
+                    <strong class="value-number">
+                        UGX {{ "{:,.0f}".format(summary.value or 0) }}
+                    </strong>
+
+                   
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Low stock</span>
+                        <span class="stat-symbol"></span>
+                    </div>
+
+                    <strong>{{ summary.low }}</strong>
+                </article>
+
+            </section>
+
+            <!-- Product records -->
+            <section class="products-panel" id="products-section">
+                
+
+                <!-- Product filters -->
+                <form class="filter-bar" id="filterForm">
+
+                    <div class="search-control">
+                        <span>⌕</span>
+
+                        <input
+                            type="search"
+                            name="q"
+                            id="searchInput"
+                            placeholder="Search name, category or supplier"
+                            value="{{ search }}"
+                        >
+                    </div>
+
+                    <select name="category" id="categoryFilter">
+                        <option value="">All categories</option>
+
+                        {% for category in categories %}
+                            <option value="{{ category }}">
+                                {{ category }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="supplier" id="supplierFilter">
+                        <option value="">All suppliers</option>
+
+                        {% for supplier in suppliers %}
+                            <option value="{{ supplier }}">
+                                {{ supplier }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    
+
+                    <label class="low-filter">
+                        <input
+                            type="checkbox"
+                            name="low_stock"
+                            id="lowFilter"
+                            value="1"
+                        >
+                        Low stock only
+                    </label>
+
+                    <button
+                        type="button"
+                        class="clear-filter"
+                        id="clearFilters"
+                    >
+                        Clear
+                    </button>
+
+                </form>
+
+                <!-- Product table -->
+                <div class="table-container">
+
+                    <table class="product-table">
+
+                        <thead>
+                            <tr>
+                                <th>PRODUCT</th>
+                                <th>CATEGORY</th>
+                                <th>SUPPLIER</th>
+                                <th class="align-right">UNIT PRICE</th>
+                                <th class="align-right">IN STOCK</th>
+                                <th class="align-right">REORDER</th>
+                                <th>DATE ADDED</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="productRows">
+
+                            {% for p in products %}
+
+                                {% set is_low = p.quantity_in_stock <= p.reorder_level %}
+
+                                <tr
+                                    data-product='{{ {
+                                        "id": p.product_id,
+                                        "name": p.product_name,
+                                        "category": p.category,
+                                        "supplier": p.supplier,
+                                        "price": p.unit_price|string,
+                                        "quantity": p.quantity_in_stock,
+                                        "reorder": p.reorder_level
+                                    }|tojson }}'
+                                >
+
+                                    <td>
+                                        <div class="product-name-cell">
+
+                                            <span class="product-initial">
+                                                {{ p.product_name[0]|upper }}
+                                            </span>
+
+                                            <div>
+                                                <b>{{ p.product_name }}</b>
+
+                                                {% if is_low %}
+                                                    <span class="stock-status">
+                                                        Low stock
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+
+                                        </div>
+                                    </td>
+
+                                    <td>{{ p.category }}</td>
+                                    <td>{{ p.supplier }}</td>
+
+                                    <td class="align-right">
+                                        UGX {{ "{:,.2f}".format(p.unit_price) }}
+                                    </td>
+
+                                    <td class="align-right quantity-cell">
+                                        {{ p.quantity_in_stock }}
+                                    </td>
+
+                                    <td class="align-right">
+                                        {{ p.reorder_level }}
+                                    </td>
+
+                                    <td>
+                                        {{ p.date_added.strftime("%d %b %Y") if p.date_added else "—" }}
+                                    </td>
+
+                                    <td>
+                                        <div class="row-actions">
+
+                                            <button
+                                                type="button"
+                                                class="icon-action edit-action"
+                                                title="Edit product"
+                                                data-edit-product
+                                                data-id="{{ p.product_id }}"
+                                                data-name="{{ p.product_name }}"
+                                                data-category="{{ p.category }}"
+                                                data-supplier="{{ p.supplier }}"
+                                                data-price="{{ p.unit_price }}"
+                                                data-quantity="{{ p.quantity_in_stock }}"
+                                                data-reorder="{{ p.reorder_level }}"
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="icon-action delete-action"
+                                                title="Delete product"
+                                                data-delete-product
+                                                data-id="{{ p.product_id }}"
+                                                data-name="{{ p.product_name }}"
+                                            >
+                                                Delete
+                                            </button>
+
+                                        </div>
+                                    </td>
+
+                                </tr>
+
+                            {% else %}
+
+                                <tr>
+                                    <td colspan="8" class="empty-state">
+                                        <b>No products yet</b>
+                                        <span>
+                                            Add your first product to begin managing stock.
+                                        </span>
+                                    </td>
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                
+            </section>
+
+        </main>
+
+        {% include "components/_footer.html" %}
+
+    </div>
+
+</div>
+
+
+
+
+
+<!-- Add product modal -->
+<div class="modal-backdrop" id="addModal" aria-hidden="true">
+
+    <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="addModalTitle"
+    >
+
+        <div class="modal-header">
+            <div>
+                <p class="eyebrow">NEW INVENTORY RECORD</p>
+                <h2 id="addModalTitle">Add product</h2>
+                <p>Enter the product details below.</p>
+            </div>
+
+            <button
+                type="button"
+                class="modal-close"
+                data-close-modal
+                aria-label="Close"
+            >
+                ×
+            </button>
+        </div>
+
+        <form
+            method="POST"
+            action="{{ url_for('add_product') }}"
+            class="modal-form"
+        >
+
+            {% include "products/_product_form.html" %}
+
+            <div class="modal-actions">
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    data-close-modal
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="button button-primary"
+                >
+                    Save product
+                </button>
+            </div>
+
+        </form>
+
+    </section>
+
+</div>
+
+
+<!-- Edit product modal -->
+<div class="modal-backdrop" id="editModal" aria-hidden="true">
+
+    <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editModalTitle"
+    >
+
+        <div class="modal-header">
+            <div>
+                <p class="eyebrow">UPDATE INVENTORY RECORD</p>
+                <h2 id="editModalTitle">Edit product</h2>
+                <p>Update the selected product information.</p>
+            </div>
+
+            <button
+                type="button"
+                class="modal-close"
+                data-close-modal
+                aria-label="Close"
+            >
+                ×
+            </button>
+        </div>
+
+        <form
+            method="POST"
+            id="editProductForm"
+            class="modal-form"
+        >
+
+            {% include "products/_product_form.html" %}
+
+            <div class="modal-actions">
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    data-close-modal
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="button button-primary"
+                >
+                    Save changes
+                </button>
+            </div>
+
+        </form>
+
+    </section>
+
+</div>
+
+
+<!-- Delete product confirmation modal -->
+<div class="modal-backdrop" id="deleteModal">
+
+    <section class="modal modal-compact">
+        <button
+            type="button"
+            class="modal-close delete-close"
+            data-close-modal
+            aria-label="Close"
+        >
+            ×
+        </button>
+
+
+        <p>
+           Are you sure you want to remove
+            <strong id="deleteProductName"></strong>
+            from your inventory records?
+        </p>
+
+        <form
+            method="POST"
+            id="deleteProductForm"
+            class="modal-actions"
+        >
+
+            <button
+                type="button"
+                class="button button-secondary"
+                data-close-modal
+            >
+                Keep product
+            </button>
+
+            <button
+                type="submit"
+                class="button button-danger"
+            >
+                Delete product
+            </button>
+
+        </form>
+
+    </section>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modals.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,34 @@
+<aside class="sidebar" id="sidebar">
+  <a class="brand sidebar-brand" href="{{ url_for('dashboard') }}">
+    <span class="brand-mark">S</span>
+    <span>SOLVER <b>UGANDA</b></span>
+  </a>
+
+  <div class="sidebar-section-label">WORKSPACE</div>
+  <nav class="side-nav">
+    <a class="side-link active" href="{{ url_for('dashboard') }}">
+      <span class="nav-symbol"></span> Dashboard</a>
+  </nav>
+ 
+  <div class="sidebar-bottom">
+    <div class="sidebar-user">
+      <span class="user-avatar">{{ session.get('user_name', 'A')[0]|upper }}</span>
+      <div>
+        <b>{{ session.get('user_name', 'Administrator') }}</b>
+        <small>Administrator</small>
+      </div>
+    </div>
+
+    <form 
+        method="post" 
+        action="{{ url_for('logout') }}">
+        
+        <button 
+              class="signout-button" 
+              type="submit">
+              
+              <span>↪</span> Sign out
+        </button>
+    </form>
+  </div>
+</aside>

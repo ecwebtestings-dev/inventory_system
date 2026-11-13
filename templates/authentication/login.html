@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Administrator Login{% endblock %}
+{% block body_class %}page{% endblock %}
+{% block body %}
+<div class="auth-shell">
+  <a class="brand" href="{{ url_for('home') }}">
+    <span class="brand-mark">S</span><span>SOLVER <b>UGANDA</b></span>
+  </a>
+
+  <div class="auth-card">
+    <p class="eyebrow">ACCESS</p>
+    <h1>Welcome back</h1>
+    <p class="auth-subtitle">Sign in to manage your inventory and stock records.</p>
+    
+    {% include "components/_flash_messages.html" %}
+    
+    <form method="post" class="stack-form">
+      <label>Email address
+        <input 
+                  type="email" 
+                  name="email" 
+                  placeholder="name@gmail.com" 
+                  autocomplete="email" 
+                  required>
+      </label>
+
+      <label>Password
+        <input 
+                  type="password" 
+                  name="password" 
+                  placeholder="Enter your password" 
+                  autocomplete="current-password" 
+                  required>
+      </label>
+
+      <button class="button button-primary button-full" 
+          type="submit">
+          Sign In
+      </button>
+    </form>
+    
+    <p class="auth-switch">New to the system? <a href="{{ url_for('register') }}">Create an Account</a></p>
+  </div><a class="back-link" href="{{ url_for('home') }}">← Back to home</a>
+</div>
+{% endblock %}
